@@ -2,6 +2,7 @@
 #include "sd_card.hpp"
 
 #include "esp_vfs_fat.h"
+#include "esp_idf_version.h"
 #include "driver/sdmmc_host.h"
 #include "driver/sdspi_host.h"
 #include "sdmmc_cmd.h"
@@ -16,15 +17,19 @@ SDCard::setup()
   static const gpio_num_t PIN_NUM_CLK  = GPIO_NUM_14;
   static const gpio_num_t PIN_NUM_CS   = GPIO_NUM_15;
 
+  esp_err_t ret;
   sdmmc_host_t        host        = SDSPI_HOST_DEFAULT();
-  sdspi_slot_config_t slot_config = SDSPI_SLOT_CONFIG_DEFAULT();
 
-  host.flags = SDMMC_HOST_FLAG_SPI;
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(4, 2, 0)
+
+  sdspi_slot_config_t slot_config = SDSPI_SLOT_CONFIG_DEFAULT();
 
   slot_config.gpio_miso = PIN_NUM_MISO;
   slot_config.gpio_mosi = PIN_NUM_MOSI;
   slot_config.gpio_sck  = PIN_NUM_CLK;
   slot_config.gpio_cs   = PIN_NUM_CS;
+
+#endif
 
   esp_vfs_fat_sdmmc_mount_config_t mount_config = {
     .format_if_mount_failed = false,
@@ -33,7 +38,7 @@ SDCard::setup()
   };
 
   sdmmc_card_t* card;
-  esp_err_t ret = esp_vfs_fat_sdmmc_mount("/sdcard", &host, &slot_config, &mount_config, &card);
+  ret = esp_vfs_fat_sdmmc_mount("/sdcard", &host, &slot_config, &mount_config, &card);
 
   if (ret != ESP_OK) {
     if (ret == ESP_FAIL) {
