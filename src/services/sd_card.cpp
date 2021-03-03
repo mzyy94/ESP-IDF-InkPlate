@@ -18,7 +18,14 @@ SDCard::setup()
   static const gpio_num_t PIN_NUM_CS   = GPIO_NUM_15;
 
   esp_err_t ret;
-  sdmmc_host_t        host        = SDSPI_HOST_DEFAULT();
+  sdmmc_host_t host = SDSPI_HOST_DEFAULT();
+  esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+    .format_if_mount_failed = false,
+    .max_files = 5,
+    .allocation_unit_size = 16 * 1024
+  };
+
+  sdmmc_card_t* card;
 
 #if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(4, 2, 0)
 
@@ -29,16 +36,9 @@ SDCard::setup()
   slot_config.gpio_sck  = PIN_NUM_CLK;
   slot_config.gpio_cs   = PIN_NUM_CS;
 
-#endif
-
-  esp_vfs_fat_sdmmc_mount_config_t mount_config = {
-    .format_if_mount_failed = false,
-    .max_files = 5,
-    .allocation_unit_size = 16 * 1024
-  };
-
-  sdmmc_card_t* card;
   ret = esp_vfs_fat_sdmmc_mount("/sdcard", &host, &slot_config, &mount_config, &card);
+
+#endif
 
   if (ret != ESP_OK) {
     if (ret == ESP_FAIL) {
