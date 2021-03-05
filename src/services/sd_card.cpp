@@ -38,6 +38,31 @@ SDCard::setup()
 
   ret = esp_vfs_fat_sdmmc_mount("/sdcard", &host, &slot_config, &mount_config, &card);
 
+#else
+
+  sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT();
+
+  slot_config.gpio_cs = PIN_NUM_CS;
+
+  spi_bus_config_t bus_cfg = {
+    .mosi_io_num     = PIN_NUM_MOSI,
+    .miso_io_num     = PIN_NUM_MISO,
+    .sclk_io_num     = PIN_NUM_CLK,
+    .quadwp_io_num   = GPIO_NUM_NC,
+    .quadhd_io_num   = GPIO_NUM_NC,
+    .max_transfer_sz = 0, // 0: Default size 4094
+    .flags           = SPICOMMON_BUSFLAG_SLAVE,
+    .intr_flags      = 0,
+  };
+
+  ret = spi_bus_initialize(HSPI_HOST, &bus_cfg, host.slot);
+  if (ret != ESP_OK) {
+      ESP_LOGE(TAG, "Failed to initialize SPI bus (%s).", esp_err_to_name(ret));
+      return false;
+  }
+
+  ret = esp_vfs_fat_sdspi_mount("/sdcard", &host, &slot_config, &mount_config, &card);
+
 #endif
 
   if (ret != ESP_OK) {
